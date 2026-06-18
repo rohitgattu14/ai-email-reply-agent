@@ -1,30 +1,16 @@
-import spacy
-import nltk
 from textblob import TextBlob
-from nltk.sentiment import SentimentIntensityAnalyzer
-from nltk.tokenize import sent_tokenize
-from collections import Counter
 import re
 
-try:
-    nlp = spacy.load("en_core_web_sm")
-except:
-    import os
-    os.system("python -m spacy download en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
-sia = SentimentIntensityAnalyzer()
-
 def analyze_email(email_text: str) -> dict:
-    """Full NLP analysis of an email."""
-    doc = nlp(email_text)
+    """Lightweight email analysis for deployment-safe version."""
+
     blob = TextBlob(email_text)
-    sentiment_scores = sia.polarity_scores(email_text)
 
     # Sentiment
-    compound = sentiment_scores["compound"]
-    if compound >= 0.05:
+    polarity = blob.sentiment.polarity
+    if polarity > 0:
         sentiment = "Positive 😊"
-    elif compound <= -0.05:
+    elif polarity < 0:
         sentiment = "Negative 😟"
     else:
         sentiment = "Neutral 😐"
@@ -32,42 +18,24 @@ def analyze_email(email_text: str) -> dict:
     # Intent detection
     text_lower = email_text.lower()
     intent = "General Inquiry"
-    if any(w in text_lower for w in ["complaint", "unhappy", "disappointed", "issue", "problem"]):
+
+    if any(w in text_lower for w in ["complaint", "issue", "problem"]):
         intent = "Complaint"
-    elif any(w in text_lower for w in ["thank", "grateful", "appreciate"]):
+    elif any(w in text_lower for w in ["thank", "appreciate"]):
         intent = "Appreciation"
-    elif any(w in text_lower for w in ["request", "please", "could you", "can you", "need"]):
+    elif any(w in text_lower for w in ["request", "please", "could you", "can you"]):
         intent = "Request"
-    elif any(w in text_lower for w in ["question", "how", "what", "when", "where", "why", "?"]):
+    elif any(w in text_lower for w in ["question", "how", "what", "why", "?"]):
         intent = "Question"
-    elif any(w in text_lower for w in ["follow up", "following up", "checking in"]):
+    elif "follow up" in text_lower:
         intent = "Follow-up"
 
-    # Key entities
-    entities = [(ent.text, ent.label_) for ent in doc.ents]
-
-    # Key sentences (top 2 by word count, simple extraction)
-    sentences = sent_tokenize(email_text)
-    key_sentences = sorted(sentences, key=len, reverse=True)[:2]
-
-    # Formality
-    formal_words = {"please", "kindly", "regarding", "herewith", "sincerely", "dear"}
-    casual_words = {"hey", "hi", "thanks", "cool", "awesome", "yeah", "nope"}
-    words = set(text_lower.split())
-    formality = "Formal" if len(words & formal_words) > len(words & casual_words) else "Casual"
-
-    # Word count & reading time
+    # Basic stats
     word_count = len(email_text.split())
-    read_time = max(1, round(word_count / 200))
 
     return {
         "sentiment": sentiment,
-        "sentiment_score": round(compound, 2),
         "intent": intent,
-        "formality": formality,
-        "entities": entities,
-        "key_sentences": key_sentences,
-        "word_count": word_count,
-        "read_time": read_time,
-        "sentences_count": len(sentences),
+        "word_count": word_count
     }
+
