@@ -28,7 +28,7 @@ Your task is to write a perfect email reply based on the original email and its 
 Tone to use: {tone_guide.get(tone, tone_guide['Professional'])}
 Detected intent of original email: {analysis['intent']}
 Detected sentiment: {analysis['sentiment']}
-Email formality level: {analysis['formality']}
+Email formality level: {analysis.get('formality', 'Neutral')}
 
 Rules:
 - Match the reply length appropriately to the original email
