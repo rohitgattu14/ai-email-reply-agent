@@ -4,3 +4,5 @@ python-dotenv>=1.0.0
 spacy>=3.7.0
 textblob>=0.18.0
 nltk>=3.8.1
+spacy
+en-core-web-sm
